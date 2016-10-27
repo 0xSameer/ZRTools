@@ -20,9 +20,10 @@ for line in sys.stdin:
     baselist.append(base)
 
 if beamwidth == 0:
-    random.shuffle(baselist)
+    # random.shuffle(baselist)
     for n in range(len(baselist)):
-        for m in range(n,len(baselist)):
+        # for m in range(n,len(baselist)):
+        for m in range(len(baselist)):
             sys.stdout.write(baselist[n]+" "+baselist[m]+"\n")
 else:
     for n in range(len(baselist)):

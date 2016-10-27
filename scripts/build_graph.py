@@ -22,7 +22,7 @@ parser.add_option("--olapthr", help="overlap threshold", dest="olapthr", default
 parser.add_option("--output", help="graph output base", dest="outfile")
 parser.add_option("--list", help="file basename list", dest="filelist", default="")
 
-(options, args) = parser.parse_args() 
+(options, args) = parser.parse_args()
 
 inFilename = options.infile
 outFilebase = options.outfile
@@ -31,7 +31,12 @@ olapthr = float(options.olapthr)
 filelist = options.filelist
 
 vout = open(outFilebase + ".nodes","w")
+# Edges discovered
 eout = open(outFilebase + ".edges","w")
+# Overlapping edges added
+oeout = open(outFilebase + ".olapedges","w")
+# Original list of edges - discovered + overlap
+zout = open(outFilebase + ".zedges","w")
 
 print "Building the file set"
 if len(filelist) == 0:
@@ -40,7 +45,7 @@ if len(filelist) == 0:
         if len(line.strip().split()) == 2:
             [f1,f2] = line.strip().split()
             fileset.add(f1);
-            fileset.add(f2);    
+            fileset.add(f2);
 
     fileset = list(fileset)
     fileset.sort()
@@ -48,7 +53,9 @@ else:
     fileset = []
     for line in open(filelist):
         f1 = line.strip().split()
-        fileset.append(f1[0]);
+        #print "HAHAHAH", f1
+        if len(f1) > 0:
+            fileset.append(f1[0]);
     fileset.sort()
 
 fileind = {}
@@ -81,7 +88,7 @@ for line in open(inFilename):
         vcount = vcount + 1
         vout.write(f1+"\t"+xA+"\t"+xB+"\t"+prob+"\t"+rho+"\t"+str(i1)+"\n")
         savefAB.append((vcount,f1,int(xA),int(xB)))
-    
+
     if int(yB) > int(yA):
         vcount = vcount + 1
         vout.write(f2+"\t"+yA+"\t"+yB+"\t"+prob+"\t"+rho+"\t"+str(i2)+"\n")
@@ -89,11 +96,12 @@ for line in open(inFilename):
 
     ecount = ecount + 1
     eout.write(str(vcount-1)+"\t"+str(vcount)+"\t"+str(int(float(prob)*1000))+"\n")
+    zout.write(str(vcount-1)+"\t"+str(vcount)+"\t"+str(int(float(prob)*1000))+"\n")
 
     cnt += 1
     if cnt % 100000 == 0:
         print "Finished ingesting",cnt
-    
+
 print "Original Nodes: ", vcount
 print "Original Edges: ", ecount
 
@@ -102,30 +110,46 @@ print "Adding Overlap Edges"
 
 savefAB.sort(key=lambda x: (x[1],x[2]))
 
-pos1 = 1
-while pos1 < len(savefAB):
+#pos1 = 1
+pos1 = 0
+#while pos1 < len(savefAB):
+while pos1 < (len(savefAB)-1):
     pos2 = pos1 + 1
-    
     while pos2 < len(savefAB) and savefAB[pos2][1] == savefAB[pos1][1]:
         pos2 = pos2 + 1
-
-    print "Processing",str(pos1)+":"+str(pos2),"of",len(savefAB)
+    
+    # if pos1 == 1252:
+    #     print "ahaaa!", savefAB[pos1], pos2
+    #print "Processing",str(pos1)+":"+str(pos2),"of",len(savefAB)
     for n in range(pos1,pos2-1):
-        for m in range(n+1,pos2-1):
+        for m in range(n+1,pos2):
             if savefAB[m][2] > savefAB[n][3]:
                 break
             num = savefAB[n][3]-savefAB[n][2] + savefAB[m][3]-savefAB[m][2]
             den = max(savefAB[n][3],savefAB[m][3]) - min(savefAB[n][2],savefAB[m][2])
             olap = max(0,num/den-1)
-            
+
             if olap >= olapthr:
                 ecount = ecount + 1
-                eout.write(str(savefAB[n][0])+"\t"+str(savefAB[m][0])+"\t"+str(int(float(olap)*1000))+"\n") 
+                # eout.write(str(savefAB[n][0])+"\t"+str(savefAB[m][0])+"\t"+str(int(float(olap)*1000))+"\n")
+                zout.write(str(savefAB[n][0])+"\t"+\
+                           str(savefAB[m][0])+"\t"+str(int(float(olap)*1000))+"\n")
+                oeout.write(str(savefAB[n][0])+"\t"+\
+                            str(savefAB[m][0])+"\t"+str(int(float(olap)*1000))+"\n")
                 #print savefAB[n], savefAB[m],olap
 
     pos1 = pos2
-  
+
 print "Total Edges: ", ecount
 
 vout.close()
 eout.close()
+oeout.close()
+
+
+with open(outFilebase + "_pairs_debug.match", "w") as outf:
+    for v, f, s, e in savefAB:
+        # out_line = str(v) + str(f)
+        outf.write("%d, %s, %d, %d \n" % (v, f, s, e))
+        # outf.write("\n")
+

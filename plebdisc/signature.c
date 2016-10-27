@@ -1,5 +1,5 @@
 //
-// Copyright 2011-2012  Johns Hopkins University 
+// Copyright 2011-2012  Johns Hopkins University
 // Authors: Ben Van Durme, Aren Jansen
 //
 
@@ -25,7 +25,7 @@ double approximate_cosine (struct signature* x, struct signature* y) {
   return cos(hamming(x,y) * 3.1415926535897932384626433832795029/ (SIG_NUM_BYTES*8));
 }
 
-void free_signatures ( struct signature *sig, int nsig ) 
+void free_signatures ( struct signature *sig, int nsig )
 {
    for ( int n = 0; n < nsig; n++ ) {
       FREE(sig[n].byte_);
@@ -45,7 +45,9 @@ struct signature* read_signatures (char *filename, int *n) {
     FILE *fp = fopen(filename, "r");
     while (! feof(fp)) {
       if (SIG_NUM_BYTES == (bytes_read = fread(sig.byte_, 1, SIG_NUM_BYTES, fp)))
-	(*n)++;
+      {
+        (*n)++;
+      }
     }
     fclose(fp);
 
@@ -77,16 +79,21 @@ struct signature* readsigs_file (char *filename, int *fA, int *fB, int *n) {
     int bytes_read = 0;
     int maxframes = *n;
 
+    // fprintf(stderr, "SIG BYTES *********: %d bytes \n", SIG_NUM_BYTES);
+
     // Read through file once to establish how many sigs there are
     (*n) = 0;
     assert_file_exist( filename );
     FILE *fp = fopen(filename, "r");
     while (! feof(fp) ) {
       if (SIG_NUM_BYTES == (bytes_read = fread(sig.byte_, 1, SIG_NUM_BYTES, fp)))
-	(*n)++;
+      {
+        (*n)++;
+        // fprintf(stderr, "READ: %d bytes \n", bytes_read);
+      }
     }
     fclose(fp);
-    
+
     if ( maxframes == 0 )
        maxframes = *n;
 
@@ -98,25 +105,25 @@ struct signature* readsigs_file (char *filename, int *fA, int *fB, int *n) {
     // Read in the signatures to the array
     assert_file_exist( filename );
     fp = fopen(filename, "r");
-    
+
     if ( *fA == -1 || *fA < 0 ) *fA = 0;
     if ( *fA >= maxframes ) {
       fprintf(stderr, "ERROR: fA is larger than total number of frames (or maxframes)\n");
       exit(1);
     }
-    
+
     if ( *fB == -1 || *fB > (*n)-1 ) *fB = (*n)-1;
     if ( *fB < *fA ) {
       fprintf(stderr, "ERROR: fB is less than fA\n");
       exit(1);
     }
-    
+
     *n = *fB - *fA + 1;
     if ( (*n) > maxframes ) {
        *fB = *fA + maxframes - 1;
        *n = *fB - *fA + 1;
     }
-    
+
     int offset = SIG_NUM_BYTES*(*fA);
     if(fseek(fp, offset, SEEK_SET) == EOF) fprintf(stderr,"seek failed");
 
@@ -127,6 +134,12 @@ struct signature* readsigs_file (char *filename, int *fA, int *fB, int *n) {
 		SIG_NUM_BYTES, bytes_read);
 	exit(-1);
       }
+      // fprintf(stderr, "read sig:\n");
+      // for (int si = 0; si < SIG_NUM_BYTES; si++)
+      // {
+      //   fprintf(stderr,"%#04x  ", sig_[i].byte_[si]);
+      // }
+      // fprintf(stderr, "\n");
     }
     fclose(fp);
 
@@ -237,20 +250,52 @@ bool signature_is_zeroed (const struct signature* x) {
   return true;
 }
 
+// void display_sig (struct signature* x, struct signature* y) {
+//   fprintf(stderr,"Printing sig x: \n");
+//   for (int i = 0; i < SIG_NUM_BYTES; i++)
+//   {
+//     fprintf(stderr,"%#04x  ", x->byte_[i]);
+//   }
+//   fprintf(stderr,"\nPrinting sig y: \n");
+//   for (int i = 0; i < SIG_NUM_BYTES; i++)
+//   {
+//     fprintf(stderr,"%#04x  ", y->byte_[i]);
+//   }
+void display_sig (struct signature* x) {
+  // fprintf(stderr,"Printing sig: ");
+  fprintf(stderr,"(");
+  for (int i = 0; i < SIG_NUM_BYTES; i++)
+  {
+    // if(i == 0)
+    // {
+    //   fprintf(stderr,"%#04x,", x->byte_[i]);
+    // }
+    // else
+    {
+     fprintf(stderr,"%#04x,", x->byte_[i]);
+    }
+  }
+  fprintf(stderr,")");
+}
+
 int pleb( struct signature *x_sig_, int x_size, struct signature *y_sig_, int y_size,
-	  int diffspeech, int P, int B, float T, int D, Dot *dotlist ) 
+	  int diffspeech, int P, int B, float T, int D, Dot *dotlist )
 {
    int Nmax = max(x_size,y_size);
    int dotcnt = 0;
-   
+
+   int dumdumcount = 0;
+
    // Are we comparing a set of signatures to itself?
    bool self_comparison = !diffspeech;
+
+   // fprintf(stderr,"Hello! this is pleb func, diffspeech: %d ...\n", diffspeech);
 
    struct signature **x_sig_ptr_ = (struct signature**) MALLOC(sizeof(struct signature*) * x_size);
    for (int i = 0; i < x_size; i++) {
       x_sig_ptr_[i] = &(x_sig_[i]);
    }
-   
+
    struct signature **y_sig_ptr_;
    if (self_comparison) {
       y_sig_ptr_ = x_sig_ptr_;
@@ -259,8 +304,8 @@ int pleb( struct signature *x_sig_, int x_size, struct signature *y_sig_, int y_
       for (int i = 0; i < y_size; i++)
 	 y_sig_ptr_[i] = &(y_sig_[i]);
    }
-   
-   int y_current;  
+
+   int y_current;
    double cosine;
    int gap = B/2;
    int start;
@@ -269,37 +314,85 @@ int pleb( struct signature *x_sig_, int x_size, struct signature *y_sig_, int y_
       qsort(x_sig_ptr_, x_size, sizeof(struct signature*), signature_ptr_greater);
 
       if (! self_comparison)
-	 qsort(y_sig_ptr_, y_size, sizeof(struct signature*), signature_ptr_greater);
-      
+        qsort(y_sig_ptr_, y_size, sizeof(struct signature*), signature_ptr_greater);
+
       // Find nearest neighbors
       y_current = 0;
       for (int x = 0; x < x_size; x++) {
 	 if (! signature_is_zeroed(x_sig_ptr_[x]) ) {
-	    
+
 	    // Increment y_current until x fits into the sort of Y
-	    if (signature_greater(x_sig_ptr_[x], y_sig_ptr_[y_current]) > 0) {
-	       y_current++;
-	       while ((y_current < y_size) && (signature_greater(x_sig_ptr_[x], y_sig_ptr_[y_current]) > 0))
-		  y_current++;
-	       start = y_current;
-	       // if there is a run of equal elements, then center y_current within those elements
-	       while ((y_current < y_size) && (signature_greater(x_sig_ptr_[x], y_sig_ptr_[y_current]) == 0))
-		  y_current++;
-	       if (y_current == y_size)
-		  y_current--;
-	       y_current = (y_current + start) / 2;
+	    if (signature_greater(x_sig_ptr_[x], y_sig_ptr_[y_current]) > 0)
+      {
+        y_current++;
+        while ((y_current < y_size) && (signature_greater(x_sig_ptr_[x], y_sig_ptr_[y_current]) > 0))
+        {
+		      y_current++;
+        }
+        start = y_current;
+        // if there is a run of equal elements, then center y_current within those elements
+        while ((y_current < y_size) && (signature_greater(x_sig_ptr_[x], y_sig_ptr_[y_current]) == 0))
+        {
+          y_current++;
+        }
+        if (y_current == y_size)
+        {
+          y_current--;
+        }
+        y_current = (y_current + start) / 2;
 	    }
 
-	    for (int y = MAX(0,y_current-gap); y < MIN(y_size, y_current + gap); y++) {
+      // fprintf(stderr,"------------------\n");
+
+      // fprintf(stderr,"x : %d ...\n", x);
+
+      // fprintf(stderr,"Looping y from: %d to %d ...\n", MAX(0,y_current-gap), MIN(y_size, y_current + gap) -1);
+      // fprintf(stderr,"gap: %d, y_current: %d, y_size: %d ...\n", gap, y_current, y_size);
+
+      int start_y = 0;
+      int end_y = y_size;
+      if(((y_current-gap) >= 0) && ((y_current + gap) <= y_size))
+      {
+        start_y = y_current-gap;
+        end_y = y_current + gap;
+      }
+      else if(((y_current-gap) >= 0) && ((y_current + gap) >= y_size))
+      {
+        // If gap crosses the end index, search more to the start
+        int adjust_gap = (y_current + gap) - y_size;
+        start_y = MAX(0,y_current-gap-adjust_gap);
+      }
+      else if(((y_current-gap) < 0) && ((y_current + gap) <= y_size))
+      {
+        // If gap crosses the start index, search more to the end
+        int adjust_gap = gap - y_current;
+        end_y = MIN(y_size, y_current + gap + adjust_gap);
+      }
+      // fprintf(stderr,"Actually looping y from: %d to %d ...\n", start_y, end_y -1);
+
+	    // for (int y = MAX(0,y_current-gap); y < MIN(y_size, y_current + gap); y++)
+      for (int y = start_y; y < end_y; y++)
+      {
+        // fprintf(stderr,"y : %d ...\n", y);
+      // for (int y = 0; y < y_size; y++) {
 	       // We're either not self comparing,
 	       // or we are ignoring similar points that have nearby IDs
+        dumdumcount++;
 	       if ((!self_comparison) ||
 		   ((abs(x_sig_ptr_[x]->id - y_sig_ptr_[y]->id) > 50))) {
-		  
+
 		  cosine = approximate_cosine(x_sig_ptr_[x], y_sig_ptr_[y]);
+      // fprintf(stderr, "approx cosine between, x and y:\n");
+      // fprintf(stderr, "\n");
+      // display_sig(x_sig_ptr_[x]);
+      // display_sig(y_sig_ptr_[y]);
+      // display_sig(x_sig_ptr_[x]);
+      // fprintf(stderr, "\n");
+      // fprintf(stderr, "Approx cosine: %f\n", cosine);
+      // dumdumcount++;
 
 		  if (cosine > T) {
-		     int xp, yp;		     
+		     int xp, yp;
 		     if (self_comparison) {
 			if (x_sig_ptr_[x]->id < y_sig_ptr_[y]->id) {
 			   xp =  x_sig_ptr_[x]->id + y_sig_ptr_[y]->id;
@@ -317,10 +410,10 @@ int pleb( struct signature *x_sig_, int x_size, struct signature *y_sig_, int y_
 			dotlist[dotcnt].val = cosine;
 			dotlist[dotcnt].xp = xp;
 			dotlist[dotcnt++].yp = yp;
-			
+
 			if (D > 0) {
 			   dotcnt = diagonal_probe(x_sig_, x_size, y_sig_, y_size,
-						   x_sig_ptr_[x]->id, y_sig_ptr_[y]->id, T, D, 
+						   x_sig_ptr_[x]->id, y_sig_ptr_[y]->id, T, D,
 						   self_comparison, dotcnt, dotlist);
 			}
 		     }
@@ -329,6 +422,12 @@ int pleb( struct signature *x_sig_, int x_size, struct signature *y_sig_, int y_
 	    }
 	 }
       }
+
+      // fprintf(stderr,"pleb func, dotcnt: %d ...\n", dotcnt);
+      // fprintf(stderr,"pleb func, dumdumcnt: %d ...\n", dumdumcount);
+
+      // fprintf(stderr,"pleb func, x_size: %d ...\n", x_size);
+      // fprintf(stderr,"pleb func, y_size: %d ...\n", y_size);
 
       // Shuffle PERMUTE_
       permute();
@@ -343,11 +442,11 @@ int pleb( struct signature *x_sig_, int x_size, struct signature *y_sig_, int y_
 
 
 int plebkws( struct signature *x_sig_, int x_size, struct signature *y_sig_, int y_size,
-	     int diffspeech, int P, int B, float T, int D, Dot *dotlist ) 
+	     int diffspeech, int P, int B, float T, int D, Dot *dotlist )
 {
    int Nmax = max(x_size,y_size);
    int dotcnt = 0;
-   
+
    struct signature **both_sig_ptr_ = (struct signature**) MALLOC(sizeof(struct signature*) * (x_size + y_size));
    for (int i = 0; i < y_size; i++) {
       both_sig_ptr_[i] = &(y_sig_[i]);
@@ -358,7 +457,7 @@ int plebkws( struct signature *x_sig_, int x_size, struct signature *y_sig_, int
       both_sig_ptr_[i+y_size] = &(x_sig_[i]);
       both_sig_ptr_[i+y_size]->query = 0;
    }
-   
+
    int gap = B/2;
 
    for (int i = 0; i < P; i++) {
@@ -370,24 +469,24 @@ int plebkws( struct signature *x_sig_, int x_size, struct signature *y_sig_, int
       for ( int y = 0; y < y_size+x_size; y++ ) {
 	 if ( !both_sig_ptr_[y]->query || signature_is_zeroed(both_sig_ptr_[y]) )
 	    continue;
-	 
+
 	 for (int x = MAX(0,y-gap); x < MIN(x_size+y_size, y+gap); x++) {
 	    if ( both_sig_ptr_[x]->query || signature_is_zeroed(both_sig_ptr_[x]) )
 	       continue;
-	    
+
 	    double cosine = approximate_cosine(both_sig_ptr_[x], both_sig_ptr_[y]);
 	    if (cosine > T) {
-	       int xp, yp;		     
+	       int xp, yp;
 	       xp =  both_sig_ptr_[x]->id + both_sig_ptr_[y]->id;
 	       yp = -both_sig_ptr_[x]->id + both_sig_ptr_[y]->id + Nmax;
-	       	       
+
 	       dotlist[dotcnt].val = cosine;
 	       dotlist[dotcnt].xp = xp;
 	       dotlist[dotcnt++].yp = yp;
 
 	       if (D > 0) {
 		  dotcnt = diagonal_probe(x_sig_, x_size, y_sig_, y_size,
-					  both_sig_ptr_[x]->id, both_sig_ptr_[y]->id, T, D, 
+					  both_sig_ptr_[x]->id, both_sig_ptr_[y]->id, T, D,
 					  0, dotcnt, dotlist);
 	       }
 	    }
@@ -404,7 +503,7 @@ int plebkws( struct signature *x_sig_, int x_size, struct signature *y_sig_, int
    return dotcnt;
 }
 
-void fprintf_signature( FILE * f, struct signature * s, int num_bytes ) 
+void fprintf_signature( FILE * f, struct signature * s, int num_bytes )
 {
    for ( int i = 0; i < num_bytes; i++ ) {
       fprintf(stderr,"%d ", s->byte_[i]);
@@ -412,8 +511,8 @@ void fprintf_signature( FILE * f, struct signature * s, int num_bytes )
 }
 
 #ifdef INDEXMODE
-int binary_search( struct signature *q, struct signature_index *index, int p, 
-		   frameind index_start, frameind index_length ) 
+int binary_search( struct signature *q, struct signature_index *index, int p,
+		   frameind index_start, frameind index_length )
 {
    if ( index_length == 1 ) {
       return index_start;
@@ -431,7 +530,7 @@ int binary_search( struct signature *q, struct signature_index *index, int p,
 }
 
 int plebindex( struct signature_index *index, struct signature *y_sig_, int y_size,
-	       int P, int B, float T, int D, Dot *dotlist ) 
+	       int P, int B, float T, int D, Dot *dotlist )
 {
    int dotcnt = 0;
    int gap = B/2;
@@ -446,7 +545,7 @@ int plebindex( struct signature_index *index, struct signature *y_sig_, int y_si
       // loop over query signatures
       for ( int y = 0; y < y_size; y++ ) {
 	 // skip if query signature is silence
-	 if ( signature_is_zeroed(&y_sig_[y]) ) 
+	 if ( signature_is_zeroed(&y_sig_[y]) )
 	    continue;
 
 	 // find the i-th signature in the p-th index
@@ -459,16 +558,16 @@ int plebindex( struct signature_index *index, struct signature *y_sig_, int y_si
 	       dotlist[dotcnt].val = cosine;
 	       dotlist[dotcnt].xp = index->order[p][x] + y_sig_[y].id;
 	       dotlist[dotcnt++].yp = -index->order[p][x] + y_sig_[y].id + index->Ntot;
-	       
+
 	       if (D > 0) {
 		  dotcnt = diagonal_probe_index(index->allfeats, index->Ntot, y_sig_, y_size,
-						index->order[p][x], y_sig_[y].id, T, D, 
+						index->order[p][x], y_sig_[y].id, T, D,
 						dotcnt, dotlist);
 	       }
-	    } 
+	    }
 	 }
       }
-   }      
+   }
    FREE(PERMUTE_);
 
    return dotcnt;
@@ -476,9 +575,9 @@ int plebindex( struct signature_index *index, struct signature *y_sig_, int y_si
 
 int diagonal_probe_index( struct signature* x_sig_, frameind x_size,
 			  struct signature* y_sig_, frameind y_size,
-			  frameind x, frameind y, float T, int D, 
-			  int dotcnt, Dot *dotlist ) 
-{    
+			  frameind x, frameind y, float T, int D,
+			  int dotcnt, Dot *dotlist )
+{
    int d = 1;
    double cosine;
 
@@ -496,7 +595,7 @@ int diagonal_probe_index( struct signature* x_sig_, frameind x_size,
       }
       d++;
    }
-   
+
    d = 1;
    while ((d < D) &&
 	  (y + d < y_size) &&
@@ -514,16 +613,16 @@ int diagonal_probe_index( struct signature* x_sig_, frameind x_size,
       }
       d++;
    }
-   
+
    return dotcnt;
 }
 #endif
 
 int diagonal_probe( struct signature* x_sig_, int x_size,
 		    struct signature* y_sig_, int y_size,
-		    int x, int y, float T, int D, bool self_comparison, 
-		    int dotcnt, Dot *dotlist ) 
-{    
+		    int x, int y, float T, int D, bool self_comparison,
+		    int dotcnt, Dot *dotlist )
+{
    int Nmax = max(x_size,y_size);
    int d = 1;
    double cosine;
@@ -556,7 +655,7 @@ int diagonal_probe( struct signature* x_sig_, int x_size,
       }
       d++;
    }
-   
+
    d = 1;
    while ((d < D) &&
 	  (y + d < y_size) &&
@@ -587,19 +686,19 @@ int diagonal_probe( struct signature* x_sig_, int x_size,
       }
       d++;
    }
-   
+
    return dotcnt;
 }
 
-void sig_castpath( struct signature *feats1, int N1, 
-		   struct signature *feats2, int N2, 
-		   int dir, int xM, int yM, float castthr, float trimthr, 
+void sig_castpath( struct signature *feats1, int N1,
+		   struct signature *feats2, int N2,
+		   int dir, int xM, int yM, float castthr, float trimthr,
 		   int R, int *xE, int *yE )
 {
    float bound = 1e10;
    float scr[SPHW+1][SPHW+1];
    char path[SPHW+1][SPHW+1];
-      
+
    for ( int i = 0; i < SPHW+1; i++ ) {
       for ( int j = 0; j < SPHW+1; j++ ) {
 	 scr[i][j] = bound;
@@ -623,7 +722,7 @@ void sig_castpath( struct signature *feats1, int N1,
 
 	 float subst_cost = 0;;
 
-	 if ( signature_is_zeroed(&feats1[x]) || 
+	 if ( signature_is_zeroed(&feats1[x]) ||
 	      signature_is_zeroed(&feats2[y]) ) {
 	    subst_cost = -1;//1;
 	 } else {
@@ -652,10 +751,10 @@ void sig_castpath( struct signature *feats1, int N1,
 	    }
 	 }
       }
-      
+
       if ( cont == 0 )
 	 break;
-   } 
+   }
 
    // Trim the loose ends
    while( *xE > 0 && *yE > 0 ) {
@@ -669,28 +768,28 @@ void sig_castpath( struct signature *feats1, int N1,
 }
 
 
-void sig_secondpass( Match *matchlist, int matchcnt, 
-		     struct signature *feats1, int N1, 
-		     struct signature *feats2, int N2, 
-		     int R, float castthr, float trimthr) 
+void sig_secondpass( Match *matchlist, int matchcnt,
+		     struct signature *feats1, int N1,
+		     struct signature *feats2, int N2,
+		     int R, float castthr, float trimthr)
 {
    for(int n = 0; n < matchcnt; n++) {
       int xM = 0.5*(matchlist[n].xA+matchlist[n].xB);
       int yM = 0.5*(matchlist[n].yA+matchlist[n].yB);
-      
+
       int xA = max(0,xM-SPHW);
       int xB = min(N1-1,xM+SPHW);
       int yA = max(0,yM-SPHW);
       int yB = min(N2-1,yM+SPHW);
-      
+
       sig_castpath(feats1, N1, feats2, N2, -1, xM-1, yM-1, castthr, trimthr, R, &xA, &yA );
       xA = xM-xA+1;
       yA = yM-yA+1;
-      
+
       sig_castpath(feats1, N1, feats2, N2, 1, xM-1, yM-1, castthr, trimthr, R, &xB, &yB );
       xB = xM+xB-1;
       yB = yM+yB-1;
-      
+
       matchlist[n].xA = max(xA,0);
       matchlist[n].xB = min(xB,N1-1);
       matchlist[n].yA = max(yA,0);
@@ -700,9 +799,9 @@ void sig_secondpass( Match *matchlist, int matchcnt,
    return;
 }
 
-void sig_kwspath( struct signature *feats1, frameind N1, 
-		  struct signature *feats2, frameind N2, 
-		  int dir, frameind xM, frameind yM, 
+void sig_kwspath( struct signature *feats1, frameind N1,
+		  struct signature *feats2, frameind N2,
+		  int dir, frameind xM, frameind yM,
 		  int R, frameind *xE, frameind *yE )
 {
    frameind Nkw = abs(*yE-yM);
@@ -718,12 +817,12 @@ void sig_kwspath( struct signature *feats1, frameind N1,
 	 path[i][j] = 0;
       }
    }
-   
+
    scr[0][0] = 0;
-   
+
    for (int i = 1; i < SPHW+1; i++ ) {
       for ( int j = max(1,i-R); j <= min(Nkw,i+R); j++ ) {
-	 
+
 	 frameind x = dir*(i-1)+xM;
 	 frameind y = dir*(j-1)+yM;
 
@@ -732,7 +831,7 @@ void sig_kwspath( struct signature *feats1, frameind N1,
 
 	 float subst_cost = 0;;
 
-	 if ( signature_is_zeroed(&feats1[x]) || 
+	 if ( signature_is_zeroed(&feats1[x]) ||
 	      signature_is_zeroed(&feats2[y]) ) {
 	    subst_cost = -1;//1;
 	 } else {
@@ -751,7 +850,7 @@ void sig_kwspath( struct signature *feats1, frameind N1,
 	    path[i][j] = 3;
 	 }
       }
-   } 
+   }
 
    float scoreopt = bound;
    for (int i = 1; i < SPHW+1; i++ ) {
@@ -762,27 +861,27 @@ void sig_kwspath( struct signature *feats1, frameind N1,
    }
 }
 
-void sig_kwspass( Match *matchlist, int matchcnt, 
-		  struct signature *feats1, frameind N1, 
-		  struct signature *feats2, frameind N2, 
-		  int R ) 
+void sig_kwspass( Match *matchlist, int matchcnt,
+		  struct signature *feats1, frameind N1,
+		  struct signature *feats2, frameind N2,
+		  int R )
 {
    for(int n = 0; n < matchcnt; n++) {
       frameind xM = 0.5*(matchlist[n].xA+matchlist[n].xB);
       frameind yM = 0.5*(matchlist[n].yA+matchlist[n].yB);
-      
+
       frameind xA = max(0,xM-SPHW);
       frameind xB = min(N1-1,xM+SPHW);
 
       frameind yA = 0;
       frameind yB = N2-1;
-      
+
       sig_kwspath(feats1, N1, feats2, N2, -1, xM-1, yM-1, R, &xA, &yA );
       xA = xM-xA+1;
-      
+
       sig_kwspath(feats1, N1, feats2, N2, 1, xM-1, yM-1, R, &xB, &yB );
       xB = xM+xB-1;
-      
+
       matchlist[n].xA = max(xA-1,0);
       matchlist[n].xB = min(xB-1,N1-1);
       matchlist[n].yA = yA;

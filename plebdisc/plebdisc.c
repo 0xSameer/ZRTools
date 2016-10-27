@@ -43,7 +43,7 @@ int dtwscore = 1;
 int kws = 0;
 
 float castthr = 7;
-int R = 10; 
+int R = 10;
 float trimthr = 0.25;
 
 
@@ -77,7 +77,7 @@ void usage()
 void parse_args(int argc, char **argv)
 {
   int i;
-  for( i = 1; i < argc; i++ ) 
+  for( i = 1; i < argc; i++ )
   {
      if( strcmp(argv[i], "-dy") == 0 ) dy = atoi(argv[++i]);
      else if ( strcmp(argv[i], "-dx") == 0 ) dx = atoi(argv[++i]);
@@ -138,10 +138,10 @@ P = %d, B = %d, T = %f, D = %d, S = %d,\n \
 dx = %d, dy = %d, medthr = %f, \n \
 castthr = %f, trimthr = %f, R = %d,\n \
 rhothr = %f, twopass = %d, dtwscore = %d, Tscore = %f\n\n",
-	  featfile1, xA, xB, featfile2, 
-	  yA, yB, maxframes,   
+	  featfile1, xA, xB, featfile2,
+	  yA, yB, maxframes,
 	  P, B, T, D, S,
-	  dx, dy, medthr, castthr, trimthr, R, rhothr, 
+	  dx, dy, medthr, castthr, trimthr, R, rhothr,
 	  twopass, dtwscore, Tscore);
 
   dx *= 2;
@@ -151,7 +151,7 @@ rhothr = %f, twopass = %d, dtwscore = %d, Tscore = %f\n\n",
 }
 
 int main(int argc, char **argv)
-{ 
+{
    parse_args(argc, argv);
 
    int N1, N2, Nmax;
@@ -179,7 +179,7 @@ int main(int argc, char **argv)
 
    // Compute the rotated dot plot
    long maxdots;
-   if ( kws ) 
+   if ( kws )
       maxdots = P*B*N2*(D+1);
    else
       maxdots = P*B*(Nmax)*(2*D+1);
@@ -190,11 +190,14 @@ int main(int argc, char **argv)
    memset(dotlist, 0, maxdots*sizeof(Dot));
 
    int dotcnt;
+
+   // fprintf(stderr,"kws setting: %d ...\n", kws);
+
    if ( kws ) {
-      dotcnt = plebkws( feats1, N1, feats2, N2, diffspeech, 
+      dotcnt = plebkws( feats1, N1, feats2, N2, diffspeech,
 			P, B, T, D, dotlist );
    } else {
-      dotcnt = pleb( feats1, N1, feats2, N2, diffspeech, 
+      dotcnt = pleb( feats1, N1, feats2, N2, diffspeech,
 		     P, B, T, D, dotlist );
    }
 
@@ -243,7 +246,7 @@ int main(int argc, char **argv)
    float *hough = (float*)MALLOC(compfact*Nmax*sizeof(float));
    hough_gaussy(compfact*Nmax, dotcnt, cumsum_mf, dy, diffspeech, hough);
    fprintf(stderr, "%f s\n",toc());
-   
+
    // Compute rho list
    fprintf(stderr, "Computing rholist: "); tic();
    int rhocnt = count_rholist(compfact*Nmax,hough,rhothr);
@@ -274,7 +277,7 @@ int main(int argc, char **argv)
       else
 	 sig_secondpass(matchlist, lastmc, feats1, N1, feats2, N2, R, castthr, trimthr);
       fprintf(stderr, "%f s\n",toc());
-      
+
       fprintf(stderr, "Filtering by second-pass duration: "); tic();
       lastmc = duration_filter(matchlist, lastmc, 0.);
       fprintf(stderr, "%f s\n",toc());
@@ -292,23 +295,23 @@ int main(int argc, char **argv)
    for ( int n = 0; n < lastmc; n++ )
    {
       if ( dtwscore ) {
-	 matchlist[n].score = 1.0 - 
-	    dtw_score(feats1, feats2, N1, N2,  
-		      matchlist[n].xA, matchlist[n].xB, 
+	 matchlist[n].score = 1.0 -
+	    dtw_score(feats1, feats2, N1, N2,
+		      matchlist[n].xA, matchlist[n].xB,
 		      matchlist[n].yA, matchlist[n].yB );
       } else {
 	 int totdots;
 	 int pathcnt;
 	 int dotvec[20];
-	 
-	 score_match( feats1, feats2, N1, N2, 
-		      matchlist[n].xA, matchlist[n].xB, matchlist[n].yA, 
+
+	 score_match( feats1, feats2, N1, N2,
+		      matchlist[n].xA, matchlist[n].xB, matchlist[n].yA,
 		      matchlist[n].yB, Tscore, &pathcnt, &totdots, dotvec);
 	 matchlist[n].score = logreg_score_ken( totdots, pathcnt, dotvec );
-	 
+
       }
    }
-   
+
    fprintf(stderr,"    Dumping %d matches\n",lastmc);
    if ( xA == -1 ) xA = 0;
    if ( yA == -1 ) yA = 0;

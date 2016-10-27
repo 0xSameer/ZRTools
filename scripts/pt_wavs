@@ -7,7 +7,7 @@
 
 . config
 
-EXPDIR=$EXPDIR/$1 
+EXPDIR=$EXPDIR/$1
 PTID=$2
 
 mkdir $EXPDIR/tmpwav
@@ -19,7 +19,7 @@ fi
 
 cnt=0
 cat $EXPDIR/matches/master_graph.dedups | awk '!ptid {print NR,$0; next} NR == ptid {print NR,$0; exit;}' ptid=$PTID | awk 'length($0) < 180000000 && NF < 30000000 {print NF, $0;}' | sort -k1 -nr | cut -d ' ' -f2- |
-while read line; do 
+while read line; do
     PTID=`echo $line | awk '{print $1;}'`
     line=`echo $line | cut -d ' ' -f2-`
     line=`echo $line | tr ' ' '\n' | sort -R | tr '\n' ' '`
@@ -28,13 +28,13 @@ while read line; do
 #    if [[ $totnodes -gt 10 ]]; then
 #	continue;
 #    fi
-    cnt=$[$cnt+1]; 
-    
+    cnt=$[$cnt+1];
+
     echo "$cnt, PTID $PTID, #Nodes $totnodes"
     #echo $line >> dedups
 
     clipcnt=0
-    for n in $line; do 
+    for n in $line; do
 	node=`head -$n $EXPDIR/matches/master_graph.nodes | tail -1`
 
 	t1=`echo $node | awk '{print $2/100;}'`
@@ -48,15 +48,25 @@ while read line; do
 	pcnt=`echo $cnt | awk '{printf "%04d", $1}'`
 
 	f=`grep "$f" $EXPDIR/files.lst`
+	# echo $TMP
+	# echo $EXPDIR
+	# echo $f
+	# f=$TMP/$f.wav
+	# echo $f
 
-	sox "$f" $EXPDIR/tmpwav/tmp.wav trim $t1 $dur;	
-	
-	OUTWAV=${pcnt}_${totnodes}.wav
+	# sox "$f" $EXPDIR/tmpwav/tmp.wav trim $t1 $dur;
+	echo $SOXBIN "$f" $EXPDIR/tmpwav/tmp.wav trim $t1 $dur;
+	$SOXBIN "$f" $EXPDIR/tmpwav/tmp.wav trim $t1 $dur;
+
+	OUTWAV=${pcnt}.wav
+    # OUTWAV=${pcnt}_${totnodes}.wav
+    
 
 	if [[ ! -f $EXPDIR/tmpwav/$OUTWAV ]]; then
 	    mv $EXPDIR/tmpwav/tmp.wav $EXPDIR/tmpwav/$OUTWAV
 	else
-	    sox $EXPDIR/tmpwav/$OUTWAV $EXPDIR/tmpwav/tmp.wav $EXPDIR/tmpwav/$OUTWAV.2.wav
+	    # sox $EXPDIR/tmpwav/$OUTWAV $EXPDIR/tmpwav/tmp.wav $EXPDIR/tmpwav/$OUTWAV.2.wav
+	    $SOXBIN $EXPDIR/tmpwav/$OUTWAV $EXPDIR/tmpwav/tmp.wav $EXPDIR/tmpwav/$OUTWAV.2.wav
 	    mv $EXPDIR/tmpwav/$OUTWAV.2.wav $EXPDIR/tmpwav/$OUTWAV
 	    rm $EXPDIR/tmpwav/tmp.wav
 	fi
@@ -64,5 +74,5 @@ while read line; do
 	if [ $clipcnt == 10 ]; then
 	    break
 	fi
-    done 
-done 
+    done
+done

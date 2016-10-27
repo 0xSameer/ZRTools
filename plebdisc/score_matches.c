@@ -55,9 +55,9 @@ double pointdist(int x0, int y0, int x1, int y1, int x2, int y2)
 {
   int dx = x2 - x1;
   int dy = y2 - y1;
-  return abs((double)(dx * (y1 - y0) - (x1 - x0) * dy))/sqrt((double)(dx*dx + dy*dy));
+  return fabs((double)(dx * (y1 - y0) - (x1 - x0) * dy))/sqrt((double)(dx*dx + dy*dy));
 }
-  
+
 int getbin(int x0, int y0, int n1, int n2)
 {
   int d = pointdist(x0, y0, 0, 0, n1, n2);
@@ -71,8 +71,8 @@ int getbin(int x0, int y0, int n1, int n2)
   return bin;
 }
 
-void score_match(struct signature *feats1, struct signature *feats2, 
-		 int N1, int N2, int start1, int end1, int start2, int end2, float T, 
+void score_match(struct signature *feats1, struct signature *feats2,
+		 int N1, int N2, int start1, int end1, int start2, int end2, float T,
 		 int *d, int *dots, int *bins)
 {
    memset(bins, 0, NBINS*sizeof(int));
@@ -89,7 +89,7 @@ void score_match(struct signature *feats1, struct signature *feats2,
 
    int i,j;
    for ( j = end2-1; j >= start2; j-- ) {
-      for ( i = start1; i < end1; i++ ) {	 
+      for ( i = start1; i < end1; i++ ) {
 	 if ( dot(&feats1[i], &feats2[j], T) ) {
 	    bins[getbin(i-start1,j-start2,n1,n2)]++;
 	    (*dots)++;
@@ -98,12 +98,12 @@ void score_match(struct signature *feats1, struct signature *feats2,
    }
 }
 
-float dtw_score(struct signature *feats1, struct signature *feats2, 
+float dtw_score(struct signature *feats1, struct signature *feats2,
 	       frameind N1, frameind N2, frameind start1, frameind end1, frameind start2, frameind end2)
 {
    int n1 = end1 - start1 + 1;
    int n2 = end2 - start2 + 1;
-   
+
    float simmx[n1*n2];
 
    for ( int i = 0; i < n1; i++ ) {
@@ -129,7 +129,7 @@ float dtw_score(struct signature *feats1, struct signature *feats2,
 
 	 simmx[i*n2+j] = MIN( dcost, MIN(vcost, hcost) );
       }
-   } 
+   }
 
    return simmx[n1*n2-1]/(n1+n2);
 }

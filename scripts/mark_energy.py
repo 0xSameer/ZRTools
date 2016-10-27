@@ -43,7 +43,7 @@ def markSpeechInFile(audiofile,outfile,p) :
     fr = p['framerate'];
     sm = p['speech_min'];
     qm = p['quiet_min'];
-    mark_str = ""; 
+    mark_str = "";
     state = 0;
     start = 10000000;
     end = 0;
@@ -57,20 +57,23 @@ def markSpeechInFile(audiofile,outfile,p) :
                     mark_str = "\n".join(mark_str.split("\n")[:-2]);
                     if(len(mark_str)>0) :
                         mark_str += "\n"
-            
+
             elif state == 0 :
                 if(float(n)/fr-start >= sm) :
                     end = float(n)/fr;
-                    mark_str += "%.2f %.2f\n"%(start,end);
+                    mark_str += "%d %d\n"%(start*100,end*100);
 
-    if state == 1 and float(len(mark))/fr-start >= sm : mark_str += "%.2f %.2f\n"%(start,float(len(mark))/fr);
+    #if state == 1 and float(len(mark))/fr-start >= sm : mark_str += "%.2f %.2f\n"%(start,float(len(mark))/fr);
+    if state == 1 and float(len(mark))/fr-start >= sm : mark_str += "%d %d\n"%(int(start*100),int(float(len(mark))/fr)*100);
+    #print("haha")
+    #print(mark_str)
     f = open(outfile,'w');
     f.write(mark_str);
     f.close();
 
 def getEnergyForFile(audiofile,p) :
-    
-    [y,fs] = openAudio(audiofile);
+
+    [y,fs] = openAudio(audiofile, p);
 
     if(fs!=p['fs'] and p['fs'] != 0) :
         y = dsp.resample(y,int(y.shape[0]*p['fs']/fs+1));
@@ -86,10 +89,10 @@ def getEnergyForFile(audiofile,p) :
     framehop = int(round(fs/fr));
 
     e = np.ones(int(np.ceil(float(N)/fs*fr)),dtype=float);
-    for n in range(len(e)) : 
+    for n in range(len(e)) :
         frame = y[(framehop*n):(framehop*n+framelen)];
         e[n] = ((frame**2).sum()/len(frame))**0.5;
-    
+
     return e
 
 def adaptiveThresh(e) :
@@ -103,7 +106,7 @@ def adaptiveThresh(e) :
     marks[labels==sp_ind] = 1;
     return marks;
 
-def openAudio(fn) :
+def openAudio(fn, p) :
     if fn[-3:] == 'wav' :
         wf = wave.open(fn,"rb");
         fs = wf.getframerate();
@@ -128,7 +131,7 @@ def openAudio(fn) :
 
 def usage() :
     print "\nmark_energy : Marks for a wav file based on RMS energy"
-    print "\tMarks regions of high energy in given .wav file or list of" 
+    print "\tMarks regions of high energy in given .wav file or list of"
     print "\t.wav files.  Output is written to file as speech boundary"
     print "\tmarks in seconds.  Each segment is given its own line.\n"
     print "\tUSAGE:"
@@ -166,7 +169,7 @@ def main(argv) :
     p['dither'] = 0.001;
     p['verbose'] = False;
     p['channel'] = -1;
-    
+
     for opt, arg in opts :
         if opt=='-i' :
             infile = arg;
@@ -189,11 +192,11 @@ def main(argv) :
         elif opt=='-h' :
             usage();
             sys.exit(0);
-    
+
     if infile is None :
         print "Error: No input file given"
         usage()
-    
+
     if os.path.isfile(infile) :
         if infile[-3:] == 'wav' :
             if os.path.isfile(outfile) :

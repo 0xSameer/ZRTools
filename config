@@ -5,7 +5,7 @@
 ##############################
 
 # Temporary file directory
-TMP=/state/partition1
+TMP=state/partition1
 
 # Experiment folder (each discovery run will get its own subfolder under EXPDIR)
 EXPDIR=exp
@@ -18,13 +18,13 @@ DIM=39
 ##############################
 
 # The sph2pipe sphere unpacking tool
-SPH2PIPEBIN=$HOME/discovery/bin/sph2pipe
+SPH2PIPEBIN=/disk/scratch/s1444673/zero/installs/wav/sph2pipe_v2.5/sph2pipe
 
 # sox, a standard linux tool
 SOXBIN=/usr/bin/sox
 
 # feacalc from the ICSI Sprachcore package
-FEACALCBIN=$HOME/discovery/bin/feacalc
+FEACALCBIN=/disk/scratch/s1444673/zero/installs/wav/icsi-scenic-tools-20120105/feacalc-0.92/feacalc
 
 ##############################
 # Grid job parameters
