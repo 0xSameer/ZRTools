@@ -9,6 +9,7 @@
 
 EXPDIR=$EXPDIR/$1
 PTID=$2
+PARAMS=$3
 
 mkdir $EXPDIR/tmpwav
 rm -f $EXPDIR/tmpwav/*.wav
@@ -18,7 +19,8 @@ if [ -z "$PTID" ]; then
 fi
 
 cnt=0
-cat $EXPDIR/matches/master_graph.dedups | awk '!ptid {print NR,$0; next} NR == ptid {print NR,$0; exit;}' ptid=$PTID | awk 'length($0) < 180000000 && NF < 30000000 {print NF, $0;}' | sort -k1 -nr | cut -d ' ' -f2- |
+cat $EXPDIR/matches/$PARAMS/master_graph.dedups | awk '!ptid {print NR,$0; next} NR == ptid {print NR,$0; exit;}' ptid=$PTID | awk 'length($0) < 180000000 && NF < 30000000 {print NF, $0;}' | cut -d ' ' -f2- |
+#cat $EXPDIR/matches/$PARAMS/master_graph.dedups | awk '!ptid {print NR,$0; next} NR == ptid {print NR,$0; exit;}' ptid=$PTID | awk 'length($0) < 180000000 && NF < 30000000 {print NF, $0;}' | sort -k1 -nr | cut -d ' ' -f2- |
 while read line; do
     PTID=`echo $line | awk '{print $1;}'`
     line=`echo $line | cut -d ' ' -f2-`
@@ -35,7 +37,7 @@ while read line; do
 
     clipcnt=0
     for n in $line; do
-	node=`head -$n $EXPDIR/matches/master_graph.nodes | tail -1`
+	node=`head -$n $EXPDIR/matches/$PARAMS/master_graph.nodes | tail -1`
 
 	t1=`echo $node | awk '{print $2/100;}'`
 	dur=`echo $node | awk '{print ($3-$2)/100;}'`
