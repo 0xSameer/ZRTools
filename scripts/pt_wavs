@@ -11,8 +11,8 @@ EXPDIR=$EXPDIR/$1
 PTID=$2
 PARAMS=$3
 
-mkdir $EXPDIR/tmpwav
-rm -f $EXPDIR/tmpwav/*.wav
+mkdir $EXPDIR/matches/$PARAMS/tmpwav
+rm -f $EXPDIR/matches/$PARAMS/tmpwav/*.wav
 
 if [ -z "$PTID" ]; then
     PTID=0;
@@ -56,21 +56,21 @@ while read line; do
 	# f=$TMP/$f.wav
 	# echo $f
 
-	# sox "$f" $EXPDIR/tmpwav/tmp.wav trim $t1 $dur;
-	echo $SOXBIN "$f" $EXPDIR/tmpwav/tmp.wav trim $t1 $dur;
-	$SOXBIN "$f" $EXPDIR/tmpwav/tmp.wav trim $t1 $dur;
+	# sox "$f" $EXPDIR/matches/$PARAMS/tmpwav/tmp.wav trim $t1 $dur;
+	echo $SOXBIN "$f" $EXPDIR/matches/$PARAMS/tmpwav/tmp.wav trim $t1 $dur;
+	$SOXBIN "$f" $EXPDIR/matches/$PARAMS/tmpwav/tmp.wav trim $t1 $dur;
 
 	OUTWAV=${pcnt}.wav
     # OUTWAV=${pcnt}_${totnodes}.wav
     
 
-	if [[ ! -f $EXPDIR/tmpwav/$OUTWAV ]]; then
-	    mv $EXPDIR/tmpwav/tmp.wav $EXPDIR/tmpwav/$OUTWAV
+	if [[ ! -f $EXPDIR/matches/$PARAMS/tmpwav/$OUTWAV ]]; then
+	    mv $EXPDIR/matches/$PARAMS/tmpwav/tmp.wav $EXPDIR/matches/$PARAMS/tmpwav/$OUTWAV
 	else
-	    # sox $EXPDIR/tmpwav/$OUTWAV $EXPDIR/tmpwav/tmp.wav $EXPDIR/tmpwav/$OUTWAV.2.wav
-	    $SOXBIN $EXPDIR/tmpwav/$OUTWAV $EXPDIR/tmpwav/tmp.wav $EXPDIR/tmpwav/$OUTWAV.2.wav
-	    mv $EXPDIR/tmpwav/$OUTWAV.2.wav $EXPDIR/tmpwav/$OUTWAV
-	    rm $EXPDIR/tmpwav/tmp.wav
+	    # sox $EXPDIR/matches/$PARAMS/tmpwav/$OUTWAV $EXPDIR/matches/$PARAMS/tmpwav/tmp.wav $EXPDIR/matches/$PARAMS/tmpwav/$OUTWAV.2.wav
+	    $SOXBIN $EXPDIR/matches/$PARAMS/tmpwav/$OUTWAV $EXPDIR/matches/$PARAMS/tmpwav/tmp.wav $EXPDIR/matches/$PARAMS/tmpwav/$OUTWAV.2.wav
+	    mv $EXPDIR/matches/$PARAMS/tmpwav/$OUTWAV.2.wav $EXPDIR/matches/$PARAMS/tmpwav/$OUTWAV
+	    rm $EXPDIR/matches/$PARAMS/tmpwav/tmp.wav
 	fi
 	clipcnt=$[$clipcnt+1]
 	if [ $clipcnt == 10 ]; then

@@ -1,0 +1,48 @@
+#!/bin/bash
+
+#USAGE: ./post_disc <exp_name> <match_thr>
+
+#
+# Copyright 2011-2015  Johns Hopkins University (Author: Aren Jansen)
+#
+
+. config
+
+ulimit -c 0
+
+TMP=${TMP:=/tmp}
+
+EXPNAME=$1
+DTWTHR=$2
+DURTHR=$3
+MATCHFILE=$4
+EXPDIR=exp/$EXPNAME
+OUTDIR=$EXPDIR/keyword_matches
+mkdir $OUTDIR
+echo $OUTDIR
+
+# Original settings
+OLAPTHR=0.97
+RHOTHR=500
+
+if [ -z $EXPNAME ]; then
+    echo "USAGE: ./post_disc <exp_name> <match_thr>"
+    exit
+fi
+
+if [ -z $DTWTHR ]; then
+    echo "USAGE: ./post_disc <exp_name> <match_thr>"
+    exit
+fi
+
+if [ ! -d $EXPDIR ]; then
+    echo "ERROR: experiment subfolder $EXPDIR does not exist"
+    exit
+fi
+
+echo "Post-processing experiment $EXPDIR"
+
+echo "Generating master match file: $OUTDIR/master_match"
+# cat $EXPDIR/matches/out.* | cut -d ' ' -f1-6 | awk 'NF == 2 || ($6 < rhothr && $5 > dtwthr && $2-$1 > durthr && $4-$3 > durthr) {print $0;}' dtwthr=$DTWTHR durthr=$DURTHR rhothr=$RHOTHR | uniq | awk 'NF == 2 {lastpair=$0; lastNF=2; next;}  lastNF==2 {print lastpair; print $0; lastNF=6; next} {print $0; lastNF=6;}' > $OUTDIR/master_match
+echo ls $EXPDIR/matches/$MATCHFILE.*
+cat $EXPDIR/matches/$MATCHFILE.* | cut -d ' ' -f1-6 | awk 'NF == 2 || ($6 < rhothr && $5 > dtwthr && $2-$1 > durthr && $4-$3 > durthr) {print $0;}' dtwthr=$DTWTHR durthr=$DURTHR rhothr=$RHOTHR | uniq | awk 'NF == 2 {lastpair=$0; lastNF=2; next;}  lastNF==2 {print lastpair; print $0; lastNF=6; next} {print $0; lastNF=6;}' > $OUTDIR/master_match
