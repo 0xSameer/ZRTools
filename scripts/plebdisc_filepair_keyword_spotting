@@ -13,10 +13,10 @@ EXEDIR=$BASEDIR/bin
 
 BASE1=$1
 BASE2=$2
-KEYLSHDIR=$3/keyword/protos_lsh
-LSHDIR=$3/call_lsh
-KEYFEATDIR=$3/keyword/protos_plp_binary
-FEATDIR=$3/call_feats
+KEYLSHDIR=$3/keyword/protos/lsh
+KEYFEATDIR=$3/keyword/protos/plp
+LSHDIR=$3/keyword/calls/lsh
+FEATDIR=$3/keyword/calls/plp
 DIM=$4
 
 LSH1=$KEYLSHDIR/${BASE1}.std.lsh64
